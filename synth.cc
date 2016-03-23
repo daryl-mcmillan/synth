@@ -75,6 +75,8 @@ int main(void) {
   unsigned long time = 0;
   int mod1 = 0;
   int mod2 = 0;
+  int fmod1 = 0;
+  int fmod2 = 0;
 
   while (1) {
     time ++;
@@ -84,13 +86,15 @@ int main(void) {
     }
     if( time > next7 ) {
       pulseD(7);
-      next7 += interval7;
+      fmod1++;
+      next7 += interval7 + SINE[fmod1 & 255];
     }
     if( time > next9 ) {
       pulseB(1);
-      next9 += interval9;
+      fmod2++;
+      next9 += interval9 - SINE[fmod2 & 255];
     }
-    if( (time % 100) == 0 ) {
+    if( (time % 25) == 0 ) {
       mod1 ++;
       mod2 ++;
       OCR2A = SINE[ (mod1) & 255 ];
