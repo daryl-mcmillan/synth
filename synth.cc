@@ -1,5 +1,4 @@
 #include <avr/io.h>
-#include <util/delay.h>
 
 typedef char byte;
 
