@@ -1,6 +1,6 @@
 #include <avr/io.h>
 
-typedef char byte;
+typedef uint8_t byte;
 
 const byte SINE[] {
   128, 131, 134, 137, 140, 143, 146, 149, 152, 156, 159, 162, 165, 168, 171, 174,
@@ -36,8 +36,8 @@ unsigned long next7 = 0;
 unsigned long next9 = 0;
 
 unsigned long interval5 = 700;
-unsigned long interval7 = 200;
-unsigned long interval9 = 300;
+unsigned long interval7 = 300;
+unsigned long interval9 = 400;
 
 int main(void) {
   // port D io direction
@@ -86,18 +86,18 @@ int main(void) {
     if( time > next7 ) {
       pulseD(7);
       fmod1++;
-      next7 += interval7 + SINE[fmod1 & 255];
+      next7 += interval7;
     }
     if( time > next9 ) {
       pulseB(1);
       fmod2++;
-      next9 += interval9 - SINE[fmod2 & 255];
+      next9 += interval9;
     }
     if( (time % 25) == 0 ) {
       mod1 ++;
       mod2 ++;
-      OCR2A = SINE[ (mod1) & 255 ];
-      OCR2B = SINE[ (mod2) & 255 ];
+      OCR2A = SINE[ (mod1) & 255 ] >> 3;
+      OCR2B = SINE[ (mod2) & 255 ] >> 3;
     }
   }
 
