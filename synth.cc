@@ -71,10 +71,7 @@ int main(void) {
   TCCR2B = 0b00000000 | prescale;
 
   // pwm A, pwm B, reserved, phase correct PWM
-  //TCCR2A = 0b10100001;
-
-  // pwm A, pwm B, reserved, Fast PWM
-  TCCR2A = 0b10100011;
+  TCCR2A = 0b10100001;
 
   OCR2A = 255;
   OCR2B = 255;
