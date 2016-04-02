@@ -31,17 +31,17 @@ void pulseB( int pin ) {
   PORTB ^= (1 << pin);
 }
 
-unsigned long next5 = 0;
+unsigned long next2 = 0;
+unsigned long next4 = 0;
 unsigned long next7 = 0;
-unsigned long next9 = 0;
 
-unsigned long interval5 = 1600000000 / 16481;
-unsigned long interval7 = 1600000000 / 11000;
-unsigned long interval9 = 1600000000 / 6541;
+unsigned long interval2 = 1600000000 / 16481;
+unsigned long interval4 = 1600000000 / 11000;
+unsigned long interval7 = 1600000000 / 6541;
 
 int main(void) {
   // port D io direction
-  DDRD = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 7);
+  DDRD = 0b00111111;
 
   // port B io direction
   DDRB = (1 << 1) | (1 << 3) | (1 << 5);
@@ -49,9 +49,12 @@ int main(void) {
   PORTB = 0;
   PORTD = 0;
 
-  next5 = interval5;
+  next2 = interval2;
+  next4 = interval4;
   next7 = interval7;
-  next9 = interval9;
+
+  TIMSK0 &= ~0b111;
+  TIFR0 &= ~0b111;
 
   // set timer2 to max speed pwm
   // clear interrupts enabled and pending
@@ -91,17 +94,17 @@ int main(void) {
       time += ticks - lastticks;
     }
     lastticks = ticks;
-    if( time > next5 ) {
-      pulseD(5);
-      next5 += interval5;
+    if( time > next2 ) {
+      pulseD(2);
+      next2 += interval2;
+    }
+    if( time > next4 ) {
+      pulseD(4);
+      next4 += interval4;
     }
     if( time > next7 ) {
       pulseD(7);
       next7 += interval7;
-    }
-    if( time > next9 ) {
-      pulseB(1);
-      next9 += interval9;
     }
     if( (time % 25) == 0 ) {
       mod1 ++;
