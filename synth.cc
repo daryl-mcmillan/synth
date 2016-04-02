@@ -31,20 +31,28 @@ void pulseB( int pin ) {
   PORTB ^= (1 << pin);
 }
 
+void toggleD( int pin ) {
+  PORTD ^= (1 << pin);
+}
+
+void toggleB( int pin ) {
+  PORTB ^= (1 << pin);
+}
+
 unsigned long next5 = 0;
 unsigned long next7 = 0;
 unsigned long next9 = 0;
 
-unsigned long interval5 = 700;
-unsigned long interval7 = 300;
-unsigned long interval9 = 400;
+unsigned long interval5 = 70;
+unsigned long interval7 = 1600000000 / 11000;
+unsigned long interval9 = 1600000000 / 6541;
 
 int main(void) {
   // port D io direction
   DDRD = (1 << 3) | (1 << 4) | (1 << 5) | (1 << 7);
 
   // port B io direction
-  DDRB = (1 << 1) | (1 << 3);
+  DDRB = (1 << 1) | (1 << 3) | (1 << 5);
 
   PORTB = 0;
   PORTD = 0;
@@ -71,33 +79,59 @@ int main(void) {
   OCR2A = 255;
   OCR2B = 255;
 
+  // timer1
+  TIMSK1 &= ~0b111;
+  TIFR1 &= ~0b111;
+  byte prescale1 = 0b001;
+  TCCR1B = 0b00000000 | prescale1;
+  TCCR1A = 0b00000000; 
+
   unsigned long time = 0;
   int mod1 = 0;
   int mod2 = 0;
   int fmod1 = 0;
   int fmod2 = 0;
 
+  uint16_t lastticks = TCNT1;
+
+  bool square = false;
   while (1) {
-    time ++;
+    uint16_t ticks = TCNT1;
+    if( lastticks > ticks ) {
+      time += 65536 - lastticks + ticks;
+    } else {
+      time += ticks - lastticks;
+    }
+    lastticks = ticks;
     if( time > next5 ) {
-      pulseD(5);
+      if(square) {
+        toggleD(5);
+      } else {
+        pulseD(5);
+      }
       next5 += interval5;
     }
     if( time > next7 ) {
-      pulseD(7);
-      fmod1++;
+      if(square) {
+        toggleD(7);
+      } else {
+        pulseD(7);
+      }
       next7 += interval7;
     }
     if( time > next9 ) {
-      pulseB(1);
-      fmod2++;
+      if(square) {
+        toggleB(1);
+      } else {
+        pulseB(1);
+      }
       next9 += interval9;
     }
     if( (time % 25) == 0 ) {
       mod1 ++;
       mod2 ++;
-      OCR2A = SINE[ (mod1) & 255 ] >> 3;
-      OCR2B = SINE[ (mod2) & 255 ] >> 3;
+      OCR2A = SINE[ (mod1) & 255 ] >> 1;
+      OCR2B = SINE[ (mod2 / 16) & 255 ] >> 1;
     }
   }
 
