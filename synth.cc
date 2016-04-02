@@ -41,7 +41,7 @@ unsigned long interval7 = 1600000000 / 6541;
 
 int main(void) {
   // port D io direction
-  DDRD = 0b00111111;
+  DDRD = 0b11111100;
 
   // port B io direction
   DDRB = (1 << 1) | (1 << 3) | (1 << 5);
@@ -53,8 +53,14 @@ int main(void) {
   next4 = interval4;
   next7 = interval7;
 
+  // timer0
   TIMSK0 &= ~0b111;
   TIFR0 &= ~0b111;
+  byte prescale0 = 0b001;
+  TCCR0B = 0b00000000 | prescale0;
+  TCCR0A = 0b10100001; // pwm A, pwm B, phase correct
+  OCR0A = 250;
+  OCR0B = 250;
 
   // set timer2 to max speed pwm
   // clear interrupts enabled and pending
@@ -109,7 +115,8 @@ int main(void) {
     if( (time % 25) == 0 ) {
       mod1 ++;
       mod2 ++;
-      OCR2A = SINE[ (mod1) & 255 ] >> 1;
+      OCR0A = SINE[ (mod1) & 255 ] >> 1;
+      OCR0B = SINE[ (mod1 / 7) & 255 ] >> 1;
       OCR2B = SINE[ (mod2 / 16) & 255 ] >> 1;
     }
   }
