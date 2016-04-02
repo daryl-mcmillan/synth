@@ -23,12 +23,12 @@ const byte SINE[] {
 
 void pulseD( int pin ) {
   PORTD |= (1 << pin);
-  PORTD ^= (1 << pin);
+  PORTD &= ~(1 << pin);
 }
 
 void pulseB( int pin ) {
   PORTB |= (1 << pin);
-  PORTB ^= (1 << pin);
+  PORTB &= ~(1 << pin);
 }
 
 unsigned long next2 = 0;
@@ -92,6 +92,9 @@ int main(void) {
 
   uint16_t lastticks = TCNT1;
 
+  unsigned long nextAdjust = 0;
+  unsigned long adjustInterval = 16000000 / 1000;
+
   while (1) {
     uint16_t ticks = TCNT1;
     if( lastticks > ticks ) {
@@ -112,12 +115,12 @@ int main(void) {
       pulseD(7);
       next7 += interval7;
     }
-    if( (time % 25) == 0 ) {
-      mod1 ++;
-      mod2 ++;
-      OCR0A = SINE[ (mod1) & 255 ] >> 1;
-      OCR0B = SINE[ (mod1 / 7) & 255 ] >> 1;
-      OCR2B = SINE[ (mod2 / 16) & 255 ] >> 1;
+    if( time > nextAdjust ) {
+      nextAdjust += adjustInterval;
+      unsigned long ms = time / 16000;
+      OCR0A = SINE[ (ms) & 255 ] >> 1;
+      OCR0B = SINE[ (ms / 7) & 255 ] >> 1;
+      OCR2B = SINE[ (ms / 32) & 255 ] >> 1;
     }
   }
 
