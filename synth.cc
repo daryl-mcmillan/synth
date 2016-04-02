@@ -31,19 +31,11 @@ void pulseB( int pin ) {
   PORTB ^= (1 << pin);
 }
 
-void toggleD( int pin ) {
-  PORTD ^= (1 << pin);
-}
-
-void toggleB( int pin ) {
-  PORTB ^= (1 << pin);
-}
-
 unsigned long next5 = 0;
 unsigned long next7 = 0;
 unsigned long next9 = 0;
 
-unsigned long interval5 = 70;
+unsigned long interval5 = 1600000000 / 16481;
 unsigned long interval7 = 1600000000 / 11000;
 unsigned long interval9 = 1600000000 / 6541;
 
@@ -91,7 +83,6 @@ int main(void) {
 
   uint16_t lastticks = TCNT1;
 
-  bool square = false;
   while (1) {
     uint16_t ticks = TCNT1;
     if( lastticks > ticks ) {
@@ -101,27 +92,15 @@ int main(void) {
     }
     lastticks = ticks;
     if( time > next5 ) {
-      if(square) {
-        toggleD(5);
-      } else {
-        pulseD(5);
-      }
+      pulseD(5);
       next5 += interval5;
     }
     if( time > next7 ) {
-      if(square) {
-        toggleD(7);
-      } else {
-        pulseD(7);
-      }
+      pulseD(7);
       next7 += interval7;
     }
     if( time > next9 ) {
-      if(square) {
-        toggleB(1);
-      } else {
-        pulseB(1);
-      }
+      pulseB(1);
       next9 += interval9;
     }
     if( (time % 25) == 0 ) {
