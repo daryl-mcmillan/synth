@@ -27,18 +27,13 @@ void pulseD( int pin ) {
   PORTD &= ~(1 << pin);
 }
 
-void pulseB( int pin ) {
-  PORTB |= (1 << pin);
-  PORTB &= ~(1 << pin);
-}
+long next2 = 0;
+long next4 = 0;
+long next7 = 0;
 
-unsigned long next2 = 0;
-unsigned long next4 = 0;
-unsigned long next7 = 0;
-
-unsigned long interval2 = 1600000000 / 16481;
-unsigned long interval4 = 1600000000 / 11000;
-unsigned long interval7 = 1600000000 / 6541;
+long interval2 = 160000000 / 1648;
+long interval4 = 160000000 / 1100;
+long interval7 = 160000000 / 654;
 
 volatile unsigned long tone1time = 0;
 volatile unsigned long tone2time = 0;
@@ -49,10 +44,10 @@ ISR(TIMER1_COMPA_vect) {
   OCR0A = SINE[tone1time] >> 1;
 
   tone2time = (tone2time + 1) % 10000;
-  OCR0B = SINE[tone2time * 256 / 10000] >> 1;
+  OCR0B = SINE[tone2time * 256 / 10000] >> 2;
 
   tone3time = (tone3time + 1) % 15000;
-  OCR2B = SINE[tone3time * 256 / 15000] >> 1;
+  OCR2B = SINE[tone3time * 256 / 15000] >> 2;
 }
 
 int main(void) {
@@ -95,26 +90,29 @@ int main(void) {
   TCCR1B = 0b00000000 | prescale1 | countToA;
   TCCR1A = 0b00000000; // no output, no output, fast
 
-  unsigned long time = 0;
   uint16_t lastticks = TCNT1;
 
   while (1) {
     uint16_t ticks = TCNT1;
+    long elapsed;
     if( lastticks > ticks ) {
-      time += 16000 - lastticks + ticks;
+      elapsed = 16000 - lastticks + ticks;
     } else {
-      time += ticks - lastticks;
+      elapsed = ticks - lastticks;
     }
     lastticks = ticks;
-    if( time > next2 ) {
+    next2 -= elapsed;
+    if( next2 <= 0 ) {
       pulseD(2);
       next2 += interval2;
     }
-    if( time > next4 ) {
+    next4 -= elapsed;
+    if( next4 <= 0 ) {
       pulseD(4);
       next4 += interval4;
     }
-    if( time > next7 ) {
+    next7 -= elapsed;
+    if( next7 <= 0 ) {
       pulseD(7);
       next7 += interval7;
     }
