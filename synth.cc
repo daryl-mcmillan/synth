@@ -40,8 +40,19 @@ unsigned long interval2 = 1600000000 / 16481;
 unsigned long interval4 = 1600000000 / 11000;
 unsigned long interval7 = 1600000000 / 6541;
 
+volatile unsigned long tone1time = 0;
+volatile unsigned long tone2time = 0;
+volatile unsigned long tone3time = 0;
+
 ISR(TIMER1_COMPA_vect) {
-  OCR0A += 1;
+  tone1time = (tone1time + 1 ) % 256;
+  OCR0A = SINE[tone1time] >> 1;
+
+  tone2time = (tone2time + 1) % 10000;
+  OCR0B = SINE[tone2time * 256 / 10000] >> 1;
+
+  tone3time = (tone3time + 1) % 15000;
+  OCR2B = SINE[tone3time * 256 / 15000] >> 1;
 }
 
 int main(void) {
@@ -67,8 +78,6 @@ int main(void) {
   byte prescale0 = 0b001;
   TCCR0B = 0b00000000 | prescale0;
   TCCR0A = 0b10100001; // pwm A, pwm B, phase correct
-  OCR0A = 255;
-  OCR0B = 255;
 
   // timer2
   TIMSK2 = 0b000;
@@ -76,8 +85,6 @@ int main(void) {
   byte prescale2 = 0b001;
   TCCR2B = 0b00000000 | prescale2;
   TCCR2A = 0b10100001; // pwm A, pwm B, phase correct
-  OCR2A = 255;
-  OCR2B = 255;
 
   // timer1
   TIMSK1 = 0b010;
@@ -89,15 +96,7 @@ int main(void) {
   TCCR1A = 0b00000000; // no output, no output, fast
 
   unsigned long time = 0;
-  int mod1 = 0;
-  int mod2 = 0;
-  int fmod1 = 0;
-  int fmod2 = 0;
-
   uint16_t lastticks = TCNT1;
-
-  unsigned long nextAdjust = 0;
-  unsigned long adjustInterval = 16000000 / 1000;
 
   while (1) {
     uint16_t ticks = TCNT1;
@@ -119,24 +118,7 @@ int main(void) {
       pulseD(7);
       next7 += interval7;
     }
-    if( time > nextAdjust ) {
-      nextAdjust += adjustInterval;
-      unsigned long ms = time / 16000;
-      //OCR0A = SINE[ (ms) & 255 ] >> 1;
-      OCR0B = SINE[ (ms / 7) & 255 ] >> 1;
-      OCR2B = SINE[ (ms / 32) & 255 ] >> 1;
-    }
   }
-
-  //OCR2B = 1;//( time / 10000 ) & 255;
-  //OCR2A = 1;//( time / 40000 ) & 255;
-  //OCR2B = SINE[( time / 10000 ) & 255];
-  //OCR2A = SINE[( time / 40000 ) & 255];
-  //int value = ( ( time / 1000 ) & 255 ) * 4;
-  //if( value > 255 ) value = 255;
-  //OCR2A = value;
-  //analogWrite(11, ( time / 10000 ) & 255);
-  //analogWrite(3, ( time / 40000 ) & 255);
 
   return 0;
 
