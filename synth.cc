@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <avr/interrupt.h>
 
 typedef uint8_t byte;
 
@@ -39,7 +40,14 @@ unsigned long interval2 = 1600000000 / 16481;
 unsigned long interval4 = 1600000000 / 11000;
 unsigned long interval7 = 1600000000 / 6541;
 
+ISR(TIMER1_COMPA_vect) {
+  OCR0A += 1;
+}
+
 int main(void) {
+
+  sei();
+
   // port D io direction
   DDRD = 0b11111100;
 
@@ -54,35 +62,31 @@ int main(void) {
   next7 = interval7;
 
   // timer0
-  TIMSK0 &= ~0b111;
-  TIFR0 &= ~0b111;
+  TIMSK0 = 0b000;
+  TIFR0 = 0b000;
   byte prescale0 = 0b001;
   TCCR0B = 0b00000000 | prescale0;
   TCCR0A = 0b10100001; // pwm A, pwm B, phase correct
-  OCR0A = 250;
-  OCR0B = 250;
+  OCR0A = 255;
+  OCR0B = 255;
 
-  // set timer2 to max speed pwm
-  // clear interrupts enabled and pending
-  TIMSK2 &= ~0b111;
-  TIFR2 &= ~0b111;
-  // don't force output, reserved, reset at top, prescale=1
-  byte prescale = 0b001;
-  //byte prescale = 0b010;
-  TCCR2B = 0b00000000 | prescale;
-
-  // pwm A, pwm B, reserved, phase correct PWM
-  TCCR2A = 0b10100001;
-
+  // timer2
+  TIMSK2 = 0b000;
+  TIFR2 = 0b000;
+  byte prescale2 = 0b001;
+  TCCR2B = 0b00000000 | prescale2;
+  TCCR2A = 0b10100001; // pwm A, pwm B, phase correct
   OCR2A = 255;
   OCR2B = 255;
 
   // timer1
-  TIMSK1 &= ~0b111;
-  TIFR1 &= ~0b111;
+  TIMSK1 = 0b010;
+  TIFR1 = 0b000;
   byte prescale1 = 0b001;
-  TCCR1B = 0b00000000 | prescale1;
-  TCCR1A = 0b00000000; 
+  byte countToA = 0b1000;
+  OCR1A = 16000;
+  TCCR1B = 0b00000000 | prescale1 | countToA;
+  TCCR1A = 0b00000000; // no output, no output, fast
 
   unsigned long time = 0;
   int mod1 = 0;
@@ -98,7 +102,7 @@ int main(void) {
   while (1) {
     uint16_t ticks = TCNT1;
     if( lastticks > ticks ) {
-      time += 65536 - lastticks + ticks;
+      time += 16000 - lastticks + ticks;
     } else {
       time += ticks - lastticks;
     }
@@ -118,7 +122,7 @@ int main(void) {
     if( time > nextAdjust ) {
       nextAdjust += adjustInterval;
       unsigned long ms = time / 16000;
-      OCR0A = SINE[ (ms) & 255 ] >> 1;
+      //OCR0A = SINE[ (ms) & 255 ] >> 1;
       OCR0B = SINE[ (ms / 7) & 255 ] >> 1;
       OCR2B = SINE[ (ms / 32) & 255 ] >> 1;
     }
