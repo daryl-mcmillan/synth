@@ -22,6 +22,11 @@ const byte SINE[] {
    79,  81,  84,  87,  90,  93,  96,  99, 103, 106, 109, 112, 115, 118, 121, 124,
 };
 
+void pulseB( int pin ) {
+  PORTB |= (1 << pin);
+  PORTB &= ~(1 << pin);
+}
+
 void pulseD( int pin ) {
   PORTD |= (1 << pin);
   PORTD &= ~(1 << pin);
@@ -39,15 +44,41 @@ volatile unsigned long tone1time = 0;
 volatile unsigned long tone2time = 0;
 volatile unsigned long tone3time = 0;
 
+long notes[] = {
+  654,
+  693,
+  734,
+  778,
+  824,
+  873,
+  925,
+  980
+};
+
+volatile int scanCounter = 0;
+
 ISR(TIMER1_COMPA_vect) {
-  tone1time = (tone1time + 1 ) % 256;
+  tone1time = (tone1time + 2 ) % 256;
   OCR0A = SINE[tone1time] >> 1;
 
-  tone2time = (tone2time + 1) % 10000;
-  OCR0B = SINE[tone2time * 256 / 10000] >> 2;
+  tone2time = (tone2time + 1) % 5120;
+  //OCR0B = SINE[tone2time * 256 / 5120] >> 2;
+  OCR0B = 64;
 
-  tone3time = (tone3time + 1) % 15000;
-  OCR2B = SINE[tone3time * 256 / 15000] >> 2;
+  tone3time = (tone3time + 1) % 1024;
+  //OCR2B = SINE[tone3time * 256 / 1024] >> 1;
+  OCR2B = 64;
+
+  interval4 = 160000000 / notes[(tone3time >> 7) % 8];
+  interval2 = 160000000 / notes[((tone3time >> 7 ) + 3 ) % 8];
+  //interval4 = 160000000 / notes[1];
+  //interval2 = 160000000 / (notes[4] + 1);
+
+  scanCounter ++;
+  if( scanCounter == 10 ) {
+    scanCounter = 0;
+    pulseB(0);
+  }
 }
 
 int main(void) {
@@ -58,7 +89,11 @@ int main(void) {
   DDRD = 0b11111100;
 
   // port B io direction
-  DDRB = (1 << 1) | (1 << 3) | (1 << 5);
+  DDRB = (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5);
+
+  // port C io direction
+  DDRC = 0;
+  PORTC = 0;
 
   PORTB = 0;
   PORTD = 0;
