@@ -32,13 +32,34 @@ void pulseD( int pin ) {
   PORTD &= ~(1 << pin);
 }
 
-long next2 = 0;
-long next4 = 0;
-long next7 = 0;
+void pulse0() {
+  pulseD(2);
+}
+void level0(byte level) {
+  OCR2B = level;
+}
 
-long interval2 = 160000000 / 1648;
-long interval4 = 160000000 / 1100;
-long interval7 = 160000000 / 654;
+void pulse1() {
+  pulseD(4);
+}
+void level1(byte level) {
+  OCR0B = level;
+}
+
+void pulse2() {
+  pulseD(7);
+}
+void level2(byte level) {
+  OCR0A = level;
+}
+
+long next0 = 0;
+long next1 = 0;
+long next2 = 0;
+
+long interval0 = 160000000 / 654;
+long interval1 = 160000000 / 660;
+long interval2 = 160000000 / 3200;
 
 volatile unsigned long tone1time = 0;
 volatile unsigned long tone2time = 0;
@@ -58,19 +79,19 @@ long notes[] = {
 volatile int scanCounter = 0;
 
 ISR(TIMER1_COMPA_vect) {
-  tone1time = (tone1time + 2 ) % 256;
-  OCR0A = SINE[tone1time] >> 1;
+  tone1time = (tone1time + 1 ) % 256;
+  //OCR0A = SINE[tone1time] >> 1;
 
   tone2time = (tone2time + 1) % 5120;
   //OCR0B = SINE[tone2time * 256 / 5120] >> 2;
-  OCR0B = 64;
+  level0( ( tone1time & 0x80 ) >> 1 );
+  level1( ( tone1time & 0x80 ) >> 1 );
+  level2( tone1time );
 
   tone3time = (tone3time + 1) % 1024;
   //OCR2B = SINE[tone3time * 256 / 1024] >> 1;
-  OCR2B = 64;
+  //OCR2B = 64;
 
-  interval4 = 160000000 / notes[(tone3time >> 7) % 8];
-  interval2 = 160000000 / notes[((tone3time >> 7 ) + 3 ) % 8];
   //interval4 = 160000000 / notes[1];
   //interval2 = 160000000 / (notes[4] + 1);
 
@@ -98,9 +119,9 @@ int main(void) {
   PORTB = 0;
   PORTD = 0;
 
+  next0 = interval0;
+  next1 = interval1;
   next2 = interval2;
-  next4 = interval4;
-  next7 = interval7;
 
   // timer0
   TIMSK0 = 0b000;
@@ -136,20 +157,20 @@ int main(void) {
       elapsed = ticks - lastticks;
     }
     lastticks = ticks;
+    next0 -= elapsed;
+    if( next0 <= 0 ) {
+      pulse0();
+      next0 += interval0;
+    }
+    next1 -= elapsed;
+    if( next1 <= 0 ) {
+      pulse1();
+      next1 += interval1;
+    }
     next2 -= elapsed;
     if( next2 <= 0 ) {
-      pulseD(2);
+      pulse2();
       next2 += interval2;
-    }
-    next4 -= elapsed;
-    if( next4 <= 0 ) {
-      pulseD(4);
-      next4 += interval4;
-    }
-    next7 -= elapsed;
-    if( next7 <= 0 ) {
-      pulseD(7);
-      next7 += interval7;
     }
   }
 
