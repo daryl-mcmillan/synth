@@ -3,6 +3,17 @@
 
 typedef uint8_t byte;
 
+long notes[] = {
+  654,
+  693,
+  734,
+  778,
+  824,
+  873,
+  925,
+  980
+};
+
 const byte SINE[] {
   128, 131, 134, 137, 140, 143, 146, 149, 152, 156, 159, 162, 165, 168, 171, 174,
   176, 179, 182, 185, 188, 191, 193, 196, 199, 201, 204, 206, 209, 211, 213, 216,
@@ -21,6 +32,18 @@ const byte SINE[] {
    37,  39,  42,  44,  46,  49,  51,  54,  56,  59,  62,  64,  67,  70,  73,  76,
    79,  81,  84,  87,  90,  93,  96,  99, 103, 106, 109, 112, 115, 118, 121, 124,
 };
+
+byte sine(byte t) {
+  return SINE[t];
+}
+
+byte ramp(byte t) {
+  return t;
+}
+
+byte saw(byte t) {
+  return 255-t;
+}
 
 void pulseB( int pin ) {
   PORTB |= (1 << pin);
@@ -53,28 +76,27 @@ void level2(byte level) {
   OCR0A = level;
 }
 
+void pulse3() {
+  pulseB(2);
+}
+void level3(byte level) {
+  OCR2A = level;
+}
+
 long next0 = 0;
 long next1 = 0;
 long next2 = 0;
+long next3 = 0;
 
 long interval0 = 160000000 / 654;
 long interval1 = 160000000 / 660;
-long interval2 = 160000000 / 3200;
+long interval2 = 160000000 / 670;
+long interval3 = 160000000 / 2200;
 
+volatile unsigned long tone0time = 0;
 volatile unsigned long tone1time = 0;
 volatile unsigned long tone2time = 0;
 volatile unsigned long tone3time = 0;
-
-long notes[] = {
-  654,
-  693,
-  734,
-  778,
-  824,
-  873,
-  925,
-  980
-};
 
 volatile int scanCounter = 0;
 
@@ -86,7 +108,8 @@ ISR(TIMER1_COMPA_vect) {
   //OCR0B = SINE[tone2time * 256 / 5120] >> 2;
   level0( ( tone1time & 0x80 ) >> 1 );
   level1( ( tone1time & 0x80 ) >> 1 );
-  level2( tone1time );
+  level2( ( tone1time & 0x80 ) >> 1 );
+  level3( ( tone1time & 0x80 ) ? 0x00 : 0x99 );
 
   tone3time = (tone3time + 1) % 1024;
   //OCR2B = SINE[tone3time * 256 / 1024] >> 1;
@@ -110,7 +133,7 @@ int main(void) {
   DDRD = 0b11111100;
 
   // port B io direction
-  DDRB = (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5);
+  DDRB = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 5);
 
   // port C io direction
   DDRC = 0;
@@ -171,6 +194,11 @@ int main(void) {
     if( next2 <= 0 ) {
       pulse2();
       next2 += interval2;
+    }
+    next3 -= elapsed;
+    if( next3 <= 0 ) {
+      pulse3();
+      next3 += interval3;
     }
   }
 
