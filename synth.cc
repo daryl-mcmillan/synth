@@ -45,12 +45,12 @@ byte saw(byte t) {
   return 255-t;
 }
 
-void pulseB( int pin ) {
+void pulseB( byte pin ) {
   PORTB |= (1 << pin);
   PORTB &= ~(1 << pin);
 }
 
-void pulseD( int pin ) {
+void pulseD( byte pin ) {
   PORTD |= (1 << pin);
   PORTD &= ~(1 << pin);
 }
@@ -83,10 +83,10 @@ void level3(byte level) {
   OCR2A = level;
 }
 
-long next0 = 0;
-long next1 = 0;
-long next2 = 0;
-long next3 = 0;
+uint16_t next0 = 0;
+uint16_t next1 = 0;
+uint16_t next2 = 0;
+uint16_t next3 = 0;
 
 uint16_t interval0 = 160000000l / 654 / 256;
 uint16_t interval1 = 160000000l / 660 / 256;
