@@ -88,10 +88,10 @@ long next1 = 0;
 long next2 = 0;
 long next3 = 0;
 
-long interval0 = 160000000 / 654;
-long interval1 = 160000000 / 660;
-long interval2 = 160000000 / 670;
-long interval3 = 160000000 / 2200;
+uint16_t interval0 = 160000000l / 654 / 256;
+uint16_t interval1 = 160000000l / 660 / 256;
+uint16_t interval2 = 160000000l / 670 / 256;
+uint16_t interval3 = 160000000l / 2200 / 256;
 
 volatile unsigned long tone0time = 0;
 volatile unsigned long tone1time = 0;
@@ -101,7 +101,7 @@ volatile unsigned long tone3time = 0;
 volatile int scanCounter = 0;
 
 ISR(TIMER1_COMPA_vect) {
-  tone1time = (tone1time + 1 ) % 256;
+  tone1time = (tone1time + 0x80 ) % 256;
   //OCR0A = SINE[tone1time] >> 1;
 
   tone2time = (tone2time + 1) % 5120;
@@ -145,6 +145,7 @@ int main(void) {
   next0 = interval0;
   next1 = interval1;
   next2 = interval2;
+  next3 = interval3;
 
   // timer0
   TIMSK0 = 0b000;
@@ -163,43 +164,40 @@ int main(void) {
   // timer1
   TIMSK1 = 0b010;
   TIFR1 = 0b000;
-  byte prescale1 = 0b001;
+  byte prescale1 = 0b0100;
   byte countToA = 0b1000;
+  byte countToMax = 0b0000;
   OCR1A = 16000;
-  TCCR1B = 0b00000000 | prescale1 | countToA;
+  TCCR1B = 0b00000000 | prescale1 | countToMax;
   TCCR1A = 0b00000000; // no output, no output, fast
 
   uint16_t lastticks = TCNT1;
 
   while (1) {
     uint16_t ticks = TCNT1;
-    long elapsed;
-    if( lastticks > ticks ) {
-      elapsed = 16000 - lastticks + ticks;
-    } else {
-      elapsed = ticks - lastticks;
-    }
+    uint16_t elapsed;
+    elapsed = ticks - lastticks;
     lastticks = ticks;
-    next0 -= elapsed;
-    if( next0 <= 0 ) {
+    if( next0 < elapsed ) {
       pulse0();
       next0 += interval0;
     }
-    next1 -= elapsed;
-    if( next1 <= 0 ) {
+    next0 -= elapsed;
+    if( next1 < elapsed ) {
       pulse1();
       next1 += interval1;
     }
-    next2 -= elapsed;
-    if( next2 <= 0 ) {
+    next1 -= elapsed;
+    if( next2 < elapsed ) {
       pulse2();
       next2 += interval2;
     }
-    next3 -= elapsed;
-    if( next3 <= 0 ) {
+    next2 -= elapsed;
+    if( next3 < elapsed ) {
       pulse3();
       next3 += interval3;
     }
+    next3 -= elapsed;
   }
 
   return 0;
